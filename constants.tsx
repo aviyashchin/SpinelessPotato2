@@ -38,6 +38,15 @@ export const ELEMENT_THEMES = [
   { name: 'Logic', color: 'text-indigo-600', hex: '#4f46e5', Icon: Code },
   { name: 'Dust', color: 'text-yellow-800', hex: '#854d0e', Icon: Layers },
   { name: 'Order', color: 'text-white', hex: '#ffffff', Icon: Command },
+  // Newly added to fix unused imports and add variety
+  { name: 'Inferno', color: 'text-orange-500', hex: '#f97316', Icon: Flame },
+  { name: 'Frost', color: 'text-cyan-300', hex: '#67e8f9', Icon: Snowflake },
+  { name: 'Granite', color: 'text-stone-600', hex: '#57534e', Icon: Mountain },
+  { name: 'Memory', color: 'text-emerald-500', hex: '#10b981', Icon: Database },
+  { name: 'Identity', color: 'text-rose-400', hex: '#fb7185', Icon: Fingerprint },
+  { name: 'Quantum', color: 'text-violet-400', hex: '#a78bfa', Icon: Microscope },
+  { name: 'Cosmos', color: 'text-indigo-900', hex: '#312e81', Icon: Telescope },
+  { name: 'Path', color: 'text-amber-600', hex: '#d97706', Icon: Compass },
 ];
 
 export const getRandomElements = (count: number) => {
