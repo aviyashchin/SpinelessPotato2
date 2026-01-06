@@ -3,9 +3,12 @@ import { AppState, Question, ElementResult } from './types';
 import { generateQuizQuestions, analyzePersonality } from './services/geminiService';
 import { CornerDecoration } from './components/CornerDecoration';
 import { Button } from './components/Button';
-import { Sparkles, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle, Download, RefreshCw } from 'lucide-react';
+
+const STORAGE_KEY = 'elemental_soul_state_v1';
 
 export default function App() {
+  // State Initialization with lazy loading from localStorage
   const [view, setView] = useState<AppState>(AppState.START);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -16,7 +19,51 @@ export default function App() {
   // To handle scrolling to top on question change
   const questionCardRef = useRef<HTMLDivElement>(null);
 
+  // 1. Load from LocalStorage on Mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.view) setView(parsed.view);
+        if (parsed.questions) setQuestions(parsed.questions);
+        if (parsed.currentQuestionIndex) setCurrentQuestionIndex(parsed.currentQuestionIndex);
+        if (parsed.answers) setAnswers(parsed.answers);
+        if (parsed.result) setResult(parsed.result);
+      } catch (e) {
+        console.error("Failed to restore soul state", e);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // 2. Save to LocalStorage on Change
+  useEffect(() => {
+    const stateToSave = {
+      view,
+      questions,
+      currentQuestionIndex,
+      answers,
+      result
+    };
+    // Only save if we have actually started something
+    if (view !== AppState.START) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    }
+  }, [view, questions, currentQuestionIndex, answers, result]);
+
+  const resetQuiz = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setView(AppState.START);
+    setQuestions([]);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setResult(null);
+    setError(null);
+  };
+
   const startQuiz = async () => {
+    resetQuiz(); // Clear any old state before starting fresh
     setView(AppState.LOADING_QUIZ);
     setError(null);
     try {
@@ -42,20 +89,19 @@ export default function App() {
         questionCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 250);
     } else {
-      finishQuiz();
+      finishQuiz(optionId);
     }
   };
 
-  const finishQuiz = async () => {
+  const finishQuiz = async (lastOptionId?: string) => {
     setView(AppState.ANALYZING);
     try {
-      // Need to pass the updated answers including the last one
-      const finalAnswers = { ...answers, [questions[currentQuestionIndex].id]: questions[currentQuestionIndex].options.find(o => o.id === answers[questions[currentQuestionIndex].id])?.id || '' };
+      const finalAnswers = { ...answers };
+      if (lastOptionId) {
+        finalAnswers[questions[currentQuestionIndex].id] = lastOptionId;
+      }
       
-      // Since handleAnswer sets state async, we might miss the last one if we use state directly immediately.
-      // Actually, let's just use the state in the effect or pass it.
-      // Safest way: 
-      const res = await analyzePersonality(questions, answers);
+      const res = await analyzePersonality(questions, finalAnswers);
       setResult(res);
       setView(AppState.RESULT);
     } catch (e) {
@@ -65,7 +111,7 @@ export default function App() {
     }
   };
   
-  // Re-trigger analysis if we somehow got here with full answers but no result (safety net)
+  // Re-trigger analysis safety net
   useEffect(() => {
     if (view === AppState.ANALYZING && Object.keys(answers).length === questions.length && !result) {
        analyzePersonality(questions, answers)
@@ -79,6 +125,17 @@ export default function App() {
         });
     }
   }, [view, answers, questions, result]);
+
+  const downloadResult = () => {
+    if (!result) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(result, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `soul-element-${result.element.toLowerCase()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
 
 
   // ---- RENDERERS ----
@@ -100,9 +157,16 @@ export default function App() {
           <p className="text-lg text-slate-400 leading-relaxed font-light">
             You are composed of stardust, shadows, and time. Answer 30 difficult questions to discover your true abstract elemental affinity.
           </p>
-          <Button onClick={startQuiz} className="text-lg px-12 py-4">
-            Begin the Trial
-          </Button>
+          <div className="flex flex-col gap-4 items-center">
+            <Button onClick={startQuiz} className="text-lg px-12 py-4">
+              Begin the Trial
+            </Button>
+            {localStorage.getItem(STORAGE_KEY) && (
+              <p className="text-xs text-slate-500">
+                (Your previous session data was found and will be cleared on start)
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -134,7 +198,7 @@ export default function App() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
           <h3 className="text-xl font-bold text-red-200">Disruption in the Aether</h3>
           <p className="text-red-200/70">{error}</p>
-          <Button variant="outline" onClick={() => setView(AppState.START)}>
+          <Button variant="outline" onClick={resetQuiz}>
             Return to Safety
           </Button>
         </div>
@@ -165,7 +229,10 @@ export default function App() {
 
         <div className="w-full max-w-4xl z-10 mb-8 flex justify-between items-end text-slate-500 font-display text-sm tracking-widest">
            <span>Question {currentQuestionIndex + 1} / {questions.length}</span>
-           <span>Soul Calibration</span>
+           <div className="flex gap-4 items-center">
+             <span>Soul Calibration</span>
+             <button onClick={resetQuiz} className="text-xs text-red-500 hover:text-red-400 uppercase tracking-widest">Abort</button>
+           </div>
         </div>
 
         {/* Question Card */}
@@ -264,7 +331,18 @@ export default function App() {
           </div>
 
           <div className="mt-16 flex gap-4">
-            <Button onClick={() => window.location.reload()}>Reincarnate (Restart)</Button>
+            <Button onClick={downloadResult} variant="secondary">
+              <span className="flex items-center gap-2">
+                <Download size={18} />
+                Save Soul Card (JSON)
+              </span>
+            </Button>
+            <Button onClick={resetQuiz}>
+               <span className="flex items-center gap-2">
+                <RefreshCw size={18} />
+                Reincarnate
+              </span>
+            </Button>
           </div>
         </div>
       </div>
