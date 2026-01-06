@@ -1,5 +1,1 @@
-declare var process: {
-  env: {
-    [key: string]: string | undefined;
-  }
-};
+/// <reference types="vite/client" />

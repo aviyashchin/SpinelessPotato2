@@ -13,13 +13,16 @@ export const generateQuizQuestions = async (): Promise<Question[]> => {
   
   const prompt = `
     Generate a 30-question multiple-choice personality quiz. 
-    The goal is to determine the user's affinity to an abstract "Element" (like Time, Shadow, Sand, Metal, Void, Light, Glass, Rust, etc.).
+    The goal is to determine the user's affinity to an abstract "Element".
+    
+    Specific Elements to consider (but not limited to): Sand, Shadow, Space, Time, Metal, Void, Light, Rust, Glass, Gravity.
     
     The questions should be:
-    1. Difficult and philosophical.
-    2. Expose deep personality traits (fears, desires, ethics).
-    3. Abstract and situation-based, not "What is your favorite color?".
-    4. "Cool" and mysterious in tone.
+    1. EXTREMELY Difficult, philosophical, and thought-provoking.
+    2. Expose deep personality traits (fears, desires, ethics, perception of reality).
+    3. Abstract and situation-based. Example: "You are standing at the edge of a dying star. What do you take with you?"
+    4. "Cool", mysterious, and slightly esoteric in tone.
+    5. Avoid mundane questions like "Do you like parties?".
 
     Return exactly 30 questions.
   `;
@@ -36,7 +39,7 @@ export const generateQuizQuestions = async (): Promise<Question[]> => {
             type: Type.OBJECT,
             properties: {
               id: { type: Type.INTEGER },
-              text: { type: Type.STRING, description: "The question text" },
+              text: { type: Type.STRING, description: "The philosophical question text" },
               options: {
                 type: Type.ARRAY,
                 items: {
@@ -79,9 +82,11 @@ export const analyzePersonality = async (questions: Question[], answers: Record<
     Analyze the following quiz answers to assign the user a specific "Element".
     
     The Element should be creative, abstract, or fantasy-based. 
-    Examples: Sand, Shadow, Space, Time, Metal, Rust, Glass, Neon, Void, Frostfire, Mercury, Stardust, Petrichor, Gravity.
+    Priority Elements: Sand, Shadow, Space, Time, Metal.
+    Other acceptable elements: Rust, Glass, Neon, Void, Frostfire, Mercury, Stardust, Petrichor, Gravity, Static.
     
-    Do NOT stick to basic elements like Fire/Water unless the personality is extremely archetypal. Be specific and cool.
+    Do NOT stick to basic elements like Fire/Water unless the personality is extremely archetypal. 
+    The description should be poetic, deep, and slightly edgy/cool.
     
     Transcript:
     ${transcript}
