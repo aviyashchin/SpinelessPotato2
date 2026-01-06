@@ -3,7 +3,6 @@ import {
   Clock, Hexagon, Ghost, Sparkles, Binary, 
   Anchor, CloudFog, Gem, Scissors
 } from 'lucide-react';
-import React from 'react';
 
 export const ELEMENT_THEMES = [
   { name: 'Fire', color: 'text-red-500', borderColor: 'border-red-500/30', Icon: Flame },

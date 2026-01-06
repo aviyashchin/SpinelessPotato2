@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppState, Question, ElementResult } from './types';
 import { generateQuizQuestions, analyzePersonality } from './services/geminiService';
 import { CornerDecoration } from './components/CornerDecoration';
@@ -119,7 +119,8 @@ export default function App() {
           setResult(res);
           setView(AppState.RESULT);
         })
-        .catch(e => {
+        .catch(err => {
+          console.error("Analysis safety net failed", err);
           setError("Failed to analyze.");
           setView(AppState.ERROR);
         });
